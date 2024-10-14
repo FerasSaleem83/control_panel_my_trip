@@ -23,7 +23,7 @@ class _PlacesState extends State<Places> {
       _isUploading = true;
     });
     tripsStream = FirebaseFirestore.instance
-        .collection('trip_budget')
+        .collection('places')
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
@@ -82,12 +82,6 @@ class _PlacesState extends State<Places> {
                           String placeName = trip['place_name'];
                           final List<String> imageUrls =
                               (trip['image_urls'] as List).cast<String>();
-                          double latitude = trip['latitude'];
-                          double longitude = trip['longitude'];
-                          int numberVisitors = trip['number_Visitors'];
-                          int placeCapacity = trip['place_capacity'];
-                          int fromBudget = trip['from_budget'];
-                          int toBudget = trip['to_budget'];
                           String placeId = trip['placeId'];
 
                           return InkWell(
@@ -96,14 +90,6 @@ class _PlacesState extends State<Places> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => InformationPlaceAdmin(
-                                    placeName: placeName,
-                                    imageUrls: imageUrls,
-                                    latitude: latitude,
-                                    longitude: longitude,
-                                    numberVisitors: numberVisitors,
-                                    placeCapacity: placeCapacity,
-                                    fromBudget: fromBudget,
-                                    toBudget: toBudget,
                                     placeId: placeId,
                                   ),
                                 ),

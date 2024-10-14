@@ -1,18 +1,18 @@
 // ignore_for_file: use_build_context_synchronously, use_key_in_widget_constructors, unnecessary_null_comparison
 
-import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:my_trip_controle_panel/style/appbar.dart';
 import 'package:my_trip_controle_panel/style/background.dart';
 import 'package:my_trip_controle_panel/widget/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class AddPlacePage extends StatefulWidget {
   const AddPlacePage({super.key});
@@ -24,28 +24,30 @@ class AddPlacePage extends StatefulWidget {
 class _AddPlacePageState extends State<AddPlacePage> {
   GoogleMapController? mapController;
   Set<Marker> markers = {};
-  final TextEditingController budgetFromController = TextEditingController();
-  final TextEditingController budgetToController = TextEditingController();
+  //final TextEditingController budgetFromController = TextEditingController();
+  //final TextEditingController budgetToController = TextEditingController();
   final TextEditingController placeNameController = TextEditingController();
-  final TextEditingController capacityController = TextEditingController();
+  //final TextEditingController capacityController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
   final TextEditingController detailsController = TextEditingController();
   List<Uint8List> _imageDataList = [];
   List<String> _imageNameList = [];
   final List<String> _imageUrlList = [];
+  bool heritageSelected = false;
+  bool entertainmentSelected = false;
 
-  //List<File> images = [];
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   bool isUploading = false;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   void add() async {
     final valid = formKey.currentState!.validate();
-    print(
-        "اجدد حالة 'latitude': ${markers.first.position.latitude},    'longitude': ${markers.first.position.longitude},          'from_budget': ${int.parse(budgetFromController.text.trim())},          'to_budget': ${int.parse(budgetToController.text.trim())},          'place_name': ${placeNameController.text.trim()},          'image_urls': $_imageUrlList,          'place_capacity': ${int.parse(capacityController.text.trim())},          'number_Visitors': 0,          'number_chairs_avilable': ${int.parse(capacityController.text.trim())},          'details': ${detailsController.text.trim()},");
+    // print(
+    //     "اجدد حالة 'latitude': ${markers.first.position.latitude},    'longitude': ${markers.first.position.longitude},          'from_budget': ${int.parse(budgetFromController.text.trim())},          'to_budget': ${int.parse(budgetToController.text.trim())},          'place_name': ${placeNameController.text.trim()},          'image_urls': $_imageUrlList,          'place_capacity': ${int.parse(capacityController.text.trim())},          'number_Visitors': 0,          'number_chairs_avilable': ${int.parse(capacityController.text.trim())},          'details': ${detailsController.text.trim()},");
     if (!valid || markers.isEmpty) {
-      return print(
-          'valid: $valid, markers.isEmpty: ${markers.isEmpty}, images.isEmpty: ${_imageDataList.isEmpty}  12  حالة ');
+      return;
+      // print(
+      //     'valid: $valid, markers.isEmpty: ${markers.isEmpty}, images.isEmpty: ${_imageDataList.isEmpty}  12  حالة ');
     }
 
     try {
@@ -114,74 +116,230 @@ class _AddPlacePageState extends State<AddPlacePage> {
           ),
         );
       } else {
-        final DocumentReference documentReference =
-            await _firestore.collection('trip_budget').add(
-          {
-            'placeId': '',
-            'latitude': markers.first.position.latitude,
-            'longitude': markers.first.position.longitude,
-            'from_budget': int.parse(budgetFromController.text.trim()),
-            'to_budget': int.parse(budgetToController.text.trim()),
-            'place_name': placeNameController.text.trim(),
-            'image_urls': _imageUrlList,
-            'place_capacity': int.parse(capacityController.text.trim()),
-            'number_Visitors': 0,
-            'number_chairs_avilable': int.parse(capacityController.text.trim()),
-            'details': detailsController.text.trim(),
-          },
-        );
+        if (entertainmentSelected == true) {
+          final DocumentReference documentReference =
+              await _firestore.collection('places').add(
+            {
+              'placeId': '',
+              'latitude': markers.first.position.latitude,
+              'longitude': markers.first.position.longitude,
+              'from_budget': 10, //int.parse(budgetFromController.text.trim()),
+              'to_budget': 50, //int.parse(budgetToController.text.trim()),
+              'place_name': placeNameController.text.trim(),
+              'image_urls': _imageUrlList,
+              'place_capacity':
+                  10000, //int.parse(capacityController.text.trim()),
+              'number_Visitors': 0,
+              'number_chairs_avilable':
+                  10000, //int.parse(capacityController.text.trim()),
+              'details': detailsController.text.trim(),
+            },
+          );
 
-        DocumentReference placeReference = FirebaseFirestore.instance
-            .collection('trip_budget')
-            .doc(documentReference.id);
-        await placeReference.set({
-          'placeId': documentReference.id,
-        }, SetOptions(merge: true));
+          DocumentReference placeReference = FirebaseFirestore.instance
+              .collection('places')
+              .doc(documentReference.id);
+          await placeReference.set({
+            'placeId': documentReference.id,
+          }, SetOptions(merge: true));
 
-        setState(() {
-          isUploading = false;
-        });
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            backgroundColor: const Color.fromARGB(255, 38, 35, 35),
-            title: const Text(
-              'نجح',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
+          await _firestore.collection('entertainment_places').add(
+            {
+              'placeId': '',
+              'latitude': markers.first.position.latitude,
+              'longitude': markers.first.position.longitude,
+              'from_budget': 10, //int.parse(budgetFromController.text.trim()),
+              'to_budget': 50, //int.parse(budgetToController.text.trim()),
+              'place_name': placeNameController.text.trim(),
+              'image_urls': _imageUrlList,
+              'place_capacity':
+                  10000, //int.parse(capacityController.text.trim()),
+              'number_Visitors': 0,
+              'number_chairs_avilable':
+                  10000, //int.parse(capacityController.text.trim()),
+              'details': detailsController.text.trim(),
+            },
+          );
+
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: const Color.fromARGB(255, 38, 35, 35),
+              title: const Text(
+                'نجح',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                ),
               ),
-            ),
-            content: const Text(
-              'تم اضافة المكان بنجاح',
-              style: TextStyle(
-                color: Colors.white,
+              content: const Text(
+                'تم اضافة المكان بنجاح',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
               ),
-            ),
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                        foregroundColor: Colors.black,
-                      ),
-                      child: const Text(
-                        'تم',
-                        style: TextStyle(color: Colors.white),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text(
+                          'تم',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        );
+                  ],
+                )
+              ],
+            ),
+          );
+          setState(() {
+            isUploading = false;
+          });
+        } else if (heritageSelected == true) {
+          final DocumentReference documentReference =
+              await _firestore.collection('places').add(
+            {
+              'placeId': '',
+              'latitude': markers.first.position.latitude,
+              'longitude': markers.first.position.longitude,
+              'from_budget': 10, //int.parse(budgetFromController.text.trim()),
+              'to_budget': 50, //int.parse(budgetToController.text.trim()),
+              'place_name': placeNameController.text.trim(),
+              'image_urls': _imageUrlList,
+              'place_capacity':
+                  10000, //int.parse(capacityController.text.trim()),
+              'number_Visitors': 0,
+              'number_chairs_avilable':
+                  10000, //int.parse(capacityController.text.trim()),
+              'details': detailsController.text.trim(),
+            },
+          );
+
+          DocumentReference placeReference = FirebaseFirestore.instance
+              .collection('places')
+              .doc(documentReference.id);
+
+          await placeReference.set({
+            'placeId': documentReference.id,
+          }, SetOptions(merge: true));
+
+          await _firestore.collection('heritage_places').add(
+            {
+              'placeId': '',
+              'latitude': markers.first.position.latitude,
+              'longitude': markers.first.position.longitude,
+              'from_budget': 10, //int.parse(budgetFromController.text.trim()),
+              'to_budget': 50, //int.parse(budgetToController.text.trim()),
+              'place_name': placeNameController.text.trim(),
+              'image_urls': _imageUrlList,
+              'place_capacity':
+                  10000, //int.parse(capacityController.text.trim()),
+              'number_Visitors': 0,
+              'number_chairs_avilable':
+                  10000, //int.parse(capacityController.text.trim()),
+              'details': detailsController.text.trim(),
+            },
+          );
+
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: const Color.fromARGB(255, 38, 35, 35),
+              title: const Text(
+                'نجح',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                ),
+              ),
+              content: const Text(
+                'تم اضافة المكان بنجاح',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text(
+                          'تم',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          );
+          setState(() {
+            isUploading = false;
+          });
+        } else {
+          setState(() {
+            isUploading = false;
+          });
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: const Color.fromARGB(255, 38, 35, 35),
+              title: const Text(
+                'خطأ',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                ),
+              ),
+              content: const Text(
+                'يرجى اختيار نوع المكان',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text(
+                          'تم',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -241,13 +399,18 @@ class _AddPlacePageState extends State<AddPlacePage> {
 
   void searchLocation() async {
     String locationName = searchController.text;
-    List<Location> locations = await locationFromAddress(locationName);
+    String apiKey = 'AIzaSyA4wJb3uf7Uvr_xT3QkokS8NaNdWD2iWSA';
+    String url =
+        'https://maps.googleapis.com/maps/api/geocode/json?address=$locationName&key=$apiKey';
 
-    if (locations.isNotEmpty) {
-      Location firstLocation = locations.first;
-      LatLng latLng = LatLng(firstLocation.latitude, firstLocation.longitude);
+    http.Response response = await http.get(Uri.parse(url));
+    Map<String, dynamic> json = jsonDecode(response.body);
 
-      // تحديث موقع الكاميرا على الخريطة
+    if (json['status'] == 'OK') {
+      double lat = json['results'][0]['geometry']['location']['lat'];
+      double lng = json['results'][0]['geometry']['location']['lng'];
+      LatLng latLng = LatLng(lat, lng);
+
       mapController!.animateCamera(CameraUpdate.newLatLngZoom(latLng, 17));
 
       setState(() {
@@ -347,251 +510,325 @@ class _AddPlacePageState extends State<AddPlacePage> {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      Expanded(
-                          child: Column(
-                        children: [
-                          const Text(
-                            'سعة المكان',
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          TextFormField(
-                            decoration: InputDecoration(
-                              labelText: 'سعة المكان',
-                              hintText: 'ادخل سعة المكان',
-                              fillColor: Colors.grey[100],
-                              filled: true,
-                              alignLabelWithHint: true,
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                  color: Colors.black,
-                                  width: 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                  color: Colors.blue,
-                                  width: 2.5,
-                                ),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 5.0,
-                                horizontal: 20,
-                              ),
-                            ),
-                            controller: capacityController,
-                            obscureText: false,
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'يرجى ادخال سعة المكان';
-                              }
-                              return null;
-                            },
-                            style: const TextStyle(
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      )),
+                      // Expanded(
+                      //     child: Column(
+                      //   children: [
+                      //     const Text(
+                      //       'سعة المكان',
+                      //       style: TextStyle(color: Colors.black),
+                      //     ),
+                      //     TextFormField(
+                      //       decoration: InputDecoration(
+                      //         labelText: 'سعة المكان',
+                      //         hintText: 'ادخل سعة المكان',
+                      //         fillColor: Colors.grey[100],
+                      //         filled: true,
+                      //         alignLabelWithHint: true,
+                      //         enabledBorder: OutlineInputBorder(
+                      //           borderSide: const BorderSide(
+                      //             color: Colors.black,
+                      //             width: 1.0,
+                      //           ),
+                      //           borderRadius: BorderRadius.circular(10.0),
+                      //         ),
+                      //         focusedBorder: OutlineInputBorder(
+                      //           borderSide: const BorderSide(
+                      //             color: Colors.blue,
+                      //             width: 2.5,
+                      //           ),
+                      //           borderRadius: BorderRadius.circular(10.0),
+                      //         ),
+                      //         contentPadding: const EdgeInsets.symmetric(
+                      //           vertical: 5.0,
+                      //           horizontal: 20,
+                      //         ),
+                      //       ),
+                      //       controller: capacityController,
+                      //       obscureText: false,
+                      //       keyboardType: TextInputType.number,
+                      //       validator: (value) {
+                      //         if (value == null || value.trim().isEmpty) {
+                      //           return 'يرجى ادخال سعة المكان';
+                      //         }
+                      //         return null;
+                      //       },
+                      //       style: const TextStyle(
+                      //         fontSize: 12,
+                      //       ),
+                      //     ),
+                      //   ],
+                      // )),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // UserImagePicker(
-                  //   onPickImages: (pickedImage) {
-                  //     setState(() {
-                  //       images = pickedImage;
-                  //     });
-                  //   },
-                  // ),
+
                   UserImagePicker(
                     onPickImages: (imageData, imageName) {
                       setState(() {
                         _imageDataList = imageData;
                         _imageNameList = imageName;
-                        // _imageDataList.addAll(imageData);
-                        // _imageNameList.addAll(imageName);
                       });
                     },
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'من',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'الميزانية',
-                                  hintText: 'ادخل الميزانية',
-                                  labelStyle: const TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  fillColor: Colors.grey[100],
-                                  filled: true,
-                                  alignLabelWithHint: true,
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors.black,
-                                      width: 1.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors.blue,
-                                      width: 2.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 5.0,
-                                    horizontal: 20,
-                                  ),
-                                ),
-                                controller: budgetFromController,
-                                obscureText: false,
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'يرجى ادخال الميزانية';
-                                  }
-                                  return null;
-                                },
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'إلى',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: 'الميزانية',
-                                  hintText: 'ادخل الميزانية',
-                                  labelStyle: const TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  fillColor: Colors.grey[100],
-                                  filled: true,
-                                  alignLabelWithHint: true,
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors.black,
-                                      width: 1.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(
-                                      color: Colors.blue,
-                                      width: 2.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 5.0,
-                                    horizontal: 20,
-                                  ),
-                                ),
-                                controller: budgetToController,
-                                obscureText: false,
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'يرجى ادخال الميزانية';
-                                  }
-                                  return null;
-                                },
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
                   // Row(
                   //   children: [
                   //     Expanded(
-                  //       child: TextFormField(
-                  //         decoration: InputDecoration(
-                  //           labelText: 'ابحث عن مكان',
-                  //           hintText: 'ادخل اسم المكان',
-                  //           fillColor: Colors.grey[100],
-                  //           filled: true,
-                  //           alignLabelWithHint: true,
-                  //           enabledBorder: OutlineInputBorder(
-                  //             borderSide: const BorderSide(
-                  //               color: Colors.black,
-                  //               width: 1.0,
+                  //       child: Padding(
+                  //         padding: const EdgeInsets.all(8.0),
+                  //         child: Column(
+                  //           children: [
+                  //             const Text(
+                  //               'من',
+                  //               style: TextStyle(color: Colors.black),
                   //             ),
-                  //             borderRadius: BorderRadius.circular(10.0),
-                  //           ),
-                  //           focusedBorder: OutlineInputBorder(
-                  //             borderSide: const BorderSide(
-                  //               color: Colors.blue,
-                  //               width: 2.5,
+                  //             TextFormField(
+                  //               decoration: InputDecoration(
+                  //                 labelText: 'الميزانية',
+                  //                 hintText: 'ادخل الميزانية',
+                  //                 labelStyle: const TextStyle(
+                  //                   color: Colors.black,
+                  //                 ),
+                  //                 fillColor: Colors.grey[100],
+                  //                 filled: true,
+                  //                 alignLabelWithHint: true,
+                  //                 enabledBorder: OutlineInputBorder(
+                  //                   borderSide: const BorderSide(
+                  //                     color: Colors.black,
+                  //                     width: 1.0,
+                  //                   ),
+                  //                   borderRadius: BorderRadius.circular(10.0),
+                  //                 ),
+                  //                 focusedBorder: OutlineInputBorder(
+                  //                   borderSide: const BorderSide(
+                  //                     color: Colors.blue,
+                  //                     width: 2.5,
+                  //                   ),
+                  //                   borderRadius: BorderRadius.circular(10.0),
+                  //                 ),
+                  //                 contentPadding: const EdgeInsets.symmetric(
+                  //                   vertical: 5.0,
+                  //                   horizontal: 20,
+                  //                 ),
+                  //               ),
+                  //               controller: budgetFromController,
+                  //               obscureText: false,
+                  //               keyboardType: TextInputType.number,
+                  //               validator: (value) {
+                  //                 if (value == null || value.trim().isEmpty) {
+                  //                   return 'يرجى ادخال الميزانية';
+                  //                 }
+                  //                 return null;
+                  //               },
+                  //               style: const TextStyle(
+                  //                 fontSize: 12,
+                  //               ),
                   //             ),
-                  //             borderRadius: BorderRadius.circular(10.0),
-                  //           ),
-                  //           contentPadding: const EdgeInsets.symmetric(
-                  //             vertical: 5.0,
-                  //             horizontal: 20,
-                  //           ),
-                  //         ),
-                  //         controller: searchController,
-                  //         obscureText: false,
-                  //         keyboardType: TextInputType.text,
-                  //         style: const TextStyle(
-                  //           fontSize: 12,
+                  //           ],
                   //         ),
                   //       ),
                   //     ),
-                  //     const SizedBox(width: 10),
-                  //     SizedBox(
-                  //       width: 65,
-                  //       child: Expanded(
-                  //         child: ElevatedButton.icon(
-                  //           onPressed: searchLocation,
-                  //           style: ElevatedButton.styleFrom(
-                  //             backgroundColor: Colors.black,
-                  //             textStyle: const TextStyle(
-                  //               color: Colors.white,
+                  //     const SizedBox(width: 20),
+                  //     Expanded(
+                  //       child: Padding(
+                  //         padding: const EdgeInsets.all(8.0),
+                  //         child: Column(
+                  //           children: [
+                  //             const Text(
+                  //               'إلى',
+                  //               style: TextStyle(color: Colors.black),
                   //             ),
-                  //             padding: const EdgeInsets.all(15),
-                  //           ),
-                  //           icon: const Icon(
-                  //             Icons.search,
-                  //             color: Colors.black,
-                  //           ),
-                  //           label: const Text(''),
+                  //             TextFormField(
+                  //               decoration: InputDecoration(
+                  //                 labelText: 'الميزانية',
+                  //                 hintText: 'ادخل الميزانية',
+                  //                 labelStyle: const TextStyle(
+                  //                   color: Colors.black,
+                  //                 ),
+                  //                 fillColor: Colors.grey[100],
+                  //                 filled: true,
+                  //                 alignLabelWithHint: true,
+                  //                 enabledBorder: OutlineInputBorder(
+                  //                   borderSide: const BorderSide(
+                  //                     color: Colors.black,
+                  //                     width: 1.0,
+                  //                   ),
+                  //                   borderRadius: BorderRadius.circular(10.0),
+                  //                 ),
+                  //                 focusedBorder: OutlineInputBorder(
+                  //                   borderSide: const BorderSide(
+                  //                     color: Colors.blue,
+                  //                     width: 2.5,
+                  //                   ),
+                  //                   borderRadius: BorderRadius.circular(10.0),
+                  //                 ),
+                  //                 contentPadding: const EdgeInsets.symmetric(
+                  //                   vertical: 5.0,
+                  //                   horizontal: 20,
+                  //                 ),
+                  //               ),
+                  //               controller: budgetToController,
+                  //               obscureText: false,
+                  //               keyboardType: TextInputType.number,
+                  //               validator: (value) {
+                  //                 if (value == null || value.trim().isEmpty) {
+                  //                   return 'يرجى ادخال الميزانية';
+                  //                 }
+                  //                 return null;
+                  //               },
+                  //               style: const TextStyle(
+                  //                 fontSize: 12,
+                  //               ),
+                  //             ),
+                  //           ],
                   //         ),
                   //       ),
                   //     ),
                   //   ],
                   // ),
-                  // const SizedBox(height: 15),
+
+                  const SizedBox(height: 20),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                if (heritageSelected == false) {
+                                  heritageSelected = true;
+                                  entertainmentSelected = false;
+                                } else {
+                                  heritageSelected = false;
+                                }
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: heritageSelected == true
+                                  ? Colors.white
+                                  : Colors.black,
+                              backgroundColor: heritageSelected == true
+                                  ? Colors.blue
+                                  : Colors.grey,
+                              fixedSize: const Size(150, 150),
+                              shape: ContinuousRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  'assets/image/logoApp.png',
+                                  height: 75,
+                                  width: 75,
+                                ),
+                                const Text('أماكن تراثية'),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 25),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                if (entertainmentSelected == false) {
+                                  entertainmentSelected = true;
+                                  heritageSelected = false;
+                                } else {
+                                  entertainmentSelected = false;
+                                }
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: entertainmentSelected == true
+                                  ? Colors.white
+                                  : Colors.black,
+                              backgroundColor: entertainmentSelected == true
+                                  ? Colors.blue
+                                  : Colors.grey,
+                              fixedSize: const Size(150, 150),
+                              shape: ContinuousRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  'assets/image/logoApp.png',
+                                  height: 75,
+                                  width: 75,
+                                ),
+                                const Text('أماكن ترفيهية'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'ابحث عن مكان',
+                            hintText: 'ادخل اسم المكان',
+                            fillColor: Colors.grey[100],
+                            filled: true,
+                            alignLabelWithHint: true,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                color: Colors.black,
+                                width: 1.0,
+                              ),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                color: Colors.blue,
+                                width: 2.5,
+                              ),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 5.0,
+                              horizontal: 20,
+                            ),
+                          ),
+                          controller: searchController,
+                          obscureText: false,
+                          keyboardType: TextInputType.text,
+                          style: const TextStyle(
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 65,
+                        child: Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: searchLocation,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                              ),
+                              padding: const EdgeInsets.all(15),
+                            ),
+                            icon: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                            label: const Text(''),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
                   Row(
                     children: [
                       Expanded(
@@ -695,11 +932,11 @@ class _AddPlacePageState extends State<AddPlacePage> {
                   if (!isUploading)
                     ElevatedButton(
                       onPressed: add,
-                      child: Text('اضافة مكان'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                       ),
+                      child: const Text('اضافة مكان'),
                     ),
                   const SizedBox(height: 20),
                 ],

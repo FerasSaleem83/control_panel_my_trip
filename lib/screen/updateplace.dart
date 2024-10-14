@@ -7,14 +7,12 @@ import 'package:my_trip_controle_panel/style/background.dart';
 
 class UpdatePlace extends StatefulWidget {
   final String placeName;
-  final int placeCapacity;
-  final int fromBudget;
-  final int toBudget;
+  final double fromBudget;
+  final double toBudget;
   final String placeId;
 
   const UpdatePlace({
     required this.placeName,
-    required this.placeCapacity,
     required this.fromBudget,
     required this.toBudget,
     required this.placeId,
@@ -27,8 +25,6 @@ class UpdatePlace extends StatefulWidget {
 
 class _UpdatePlaceState extends State<UpdatePlace> {
   final TextEditingController _placeNameController = TextEditingController();
-  final TextEditingController _placeCapacityController =
-      TextEditingController();
   final TextEditingController _fromBudgetController = TextEditingController();
   final TextEditingController _toBudgetController = TextEditingController();
   bool _isUploading = false;
@@ -38,7 +34,6 @@ class _UpdatePlaceState extends State<UpdatePlace> {
     super.initState();
 
     _placeNameController.text = widget.placeName;
-    _placeCapacityController.text = widget.placeCapacity.toString();
     _fromBudgetController.text = widget.fromBudget.toString();
     _toBudgetController.text = widget.toBudget.toString();
   }
@@ -49,13 +44,12 @@ class _UpdatePlaceState extends State<UpdatePlace> {
         _isUploading = true;
       });
       await FirebaseFirestore.instance
-          .collection('trip_budget')
+          .collection('places')
           .doc(widget.placeId)
           .set({
         'from_budget': int.parse(_fromBudgetController.text.trim()),
         'to_budget': int.parse(_toBudgetController.text.trim()),
         'place_name': _placeNameController.text.trim(),
-        'place_capacity': int.parse(_placeCapacityController.text.trim()),
       }, SetOptions(merge: true));
 
       showDialog(
@@ -178,37 +172,38 @@ class _UpdatePlaceState extends State<UpdatePlace> {
                     controller: _placeNameController,
                   ),
                   const SizedBox(height: 15),
-                  TextFormField(
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.black,
-                    ),
-                    cursorColor: Colors.black,
-                    decoration: const InputDecoration(
-                      fillColor: Color.fromARGB(255, 114, 139, 164),
-                      filled: true,
-                      alignLabelWithHint: true,
-                      labelText: 'سعة المكان',
-                      labelStyle: TextStyle(
-                        color: Colors.black,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Colors.black,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Color.fromARGB(255, 9, 41, 248),
-                        ),
-                      ),
-                    ),
-                    keyboardType: TextInputType.number,
-                    autocorrect: false,
-                    textCapitalization: TextCapitalization.words,
-                    controller: _placeCapacityController,
-                  ),
-                  const SizedBox(height: 15),
+                  // TextFormField(
+                  //   textAlign: TextAlign.center,
+                  //   style: const TextStyle(
+                  //     color: Colors.black,
+                  //   ),
+                  //   cursorColor: Colors.black,
+                  //   decoration: const InputDecoration(
+                  //     fillColor: Color.fromARGB(255, 114, 139, 164),
+                  //     filled: true,
+                  //     alignLabelWithHint: true,
+                  //     labelText: 'سعة المكان',
+                  //     labelStyle: TextStyle(
+                  //       color: Colors.black,
+                  //     ),
+                  //     enabledBorder: OutlineInputBorder(
+                  //       borderSide: BorderSide(
+                  //         color: Colors.black,
+                  //       ),
+                  //     ),
+                  //     focusedBorder: OutlineInputBorder(
+                  //       borderSide: BorderSide(
+                  //         color: Color.fromARGB(255, 9, 41, 248),
+                  //       ),
+                  //     ),
+                  //   ),
+                  //   keyboardType: TextInputType.number,
+                  //   autocorrect: false,
+                  //   textCapitalization: TextCapitalization.words,
+                  //   controller: _placeCapacityController,
+                  // ),
+
+                  // const SizedBox(height: 15),
                   TextFormField(
                     textAlign: TextAlign.center,
                     style: const TextStyle(
