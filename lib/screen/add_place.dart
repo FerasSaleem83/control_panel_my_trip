@@ -118,7 +118,7 @@ class _AddPlacePageState extends State<AddPlacePage> {
       } else {
         if (entertainmentSelected == true) {
           final DocumentReference documentReference =
-              await _firestore.collection('places').add(
+              await _firestore.collection('trip_budget').add(
             {
               'placeId': '',
               'latitude': markers.first.position.latitude,
@@ -137,7 +137,7 @@ class _AddPlacePageState extends State<AddPlacePage> {
           );
 
           DocumentReference placeReference = FirebaseFirestore.instance
-              .collection('places')
+              .collection('trip_budget')
               .doc(documentReference.id);
           await placeReference.set({
             'placeId': documentReference.id,
@@ -207,7 +207,7 @@ class _AddPlacePageState extends State<AddPlacePage> {
           });
         } else if (heritageSelected == true) {
           final DocumentReference documentReference =
-              await _firestore.collection('places').add(
+              await _firestore.collection('trip_budget').add(
             {
               'placeId': '',
               'latitude': markers.first.position.latitude,
@@ -226,7 +226,7 @@ class _AddPlacePageState extends State<AddPlacePage> {
           );
 
           DocumentReference placeReference = FirebaseFirestore.instance
-              .collection('places')
+              .collection('trip_budget')
               .doc(documentReference.id);
 
           await placeReference.set({

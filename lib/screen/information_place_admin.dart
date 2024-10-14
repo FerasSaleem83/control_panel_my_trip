@@ -32,7 +32,7 @@ class _InformationPlaceAdminState extends State<InformationPlaceAdmin> {
   Future<DocumentSnapshot<Map<String, dynamic>>> getData() async {
     DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
         .instance
-        .collection('places')
+        .collection('trip_budget')
         .doc(widget.placeId)
         .get();
 
@@ -67,7 +67,7 @@ class _InformationPlaceAdminState extends State<InformationPlaceAdmin> {
   Future<void> deletePlace() async {
     try {
       await FirebaseFirestore.instance
-          .collection('places')
+          .collection('trip_budget')
           .doc(widget.placeId)
           .delete();
       Navigator.pop(context);

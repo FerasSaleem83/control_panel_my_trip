@@ -44,7 +44,7 @@ class _UpdatePlaceState extends State<UpdatePlace> {
         _isUploading = true;
       });
       await FirebaseFirestore.instance
-          .collection('places')
+          .collection('trip_budget')
           .doc(widget.placeId)
           .set({
         'from_budget': int.parse(_fromBudgetController.text.trim()),

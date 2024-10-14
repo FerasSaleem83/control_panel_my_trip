@@ -23,7 +23,7 @@ class _PlacesState extends State<Places> {
       _isUploading = true;
     });
     tripsStream = FirebaseFirestore.instance
-        .collection('places')
+        .collection('trip_budget')
         .snapshots()
         .map((snapshot) => snapshot.docs);
 
